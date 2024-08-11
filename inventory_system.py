@@ -1,8 +1,10 @@
-import sqlite3
-import pandas as pd
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+import sqlite3 # SQLite database module
+import pandas as pd # Data manipulation and analysis library
+from reportlab.lib.pagesizes import letter # Page size for PDF
+from reportlab.pdfgen import canvas # Library to create PDF documents
 
+
+# Class to represent a bike
 class Bike:
     def __init__(self, make, model, quantity, price):
         self.make = make
@@ -10,12 +12,16 @@ class Bike:
         self.quantity = quantity
         self.price = price
 
+# Class to handle inventory operations
 class Inventory:
     def __init__(self, db_name="inventory.db"):
+        # Connect to SQLite database
         self.conn = sqlite3.connect(db_name)
+        # Create table if it doesn't exist
         self.create_table()
 
     def create_table(self):
+        # SQL to create a table for bikes
         cursor = self.conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS bikes (
@@ -29,6 +35,7 @@ class Inventory:
         self.conn.commit()
 
     def add_bike(self, make, model, quantity, price):
+        # Add a new bike to the database
         cursor = self.conn.cursor()
         cursor.execute('''
             INSERT INTO bikes (make, model, quantity, price)
@@ -37,6 +44,7 @@ class Inventory:
         self.conn.commit()
 
     def search_price(self, make, model):
+        # Search for the price of a bike by make and model
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT price FROM bikes WHERE make = ? AND model = ?
@@ -45,6 +53,7 @@ class Inventory:
         return result[0] if result else None
 
     def create_invoice(self, make, model, quantity):
+        # Create an invoice for selling a bike
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT id, quantity, price FROM bikes WHERE make = ? AND model = ?
@@ -53,6 +62,7 @@ class Inventory:
         if result:
             bike_id, available_quantity, price = result
             if available_quantity >= quantity:
+                # Update the quantity in the inventory
                 new_quantity = available_quantity - quantity
                 cursor.execute('''
                     UPDATE bikes SET quantity = ? WHERE id = ?
@@ -66,6 +76,7 @@ class Inventory:
             return "Bike Not Found. Please Check Details or Contact Sales."
 
     def display_inventory(self):
+        # Display the current inventory
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT make, model, quantity, price FROM bikes
@@ -78,6 +89,7 @@ class Inventory:
 
     def generate_excel_report(self, file_name="inventory_report.xlsx"):
         cursor = self.conn.cursor()
+        # Generate an Excel report of the inventory
         cursor.execute('''
             SELECT make, model, quantity, price FROM bikes
         ''')
@@ -86,6 +98,7 @@ class Inventory:
         df.to_excel(file_name, index=False)
 
     def generate_pdf_report(self, file_name="inventory_report.pdf"):
+        # Generate a PDF report of the inventory
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT make, model, quantity, price FROM bikes
@@ -99,10 +112,13 @@ class Inventory:
             y -= 20
         c.save()
 
+#----------------------  Main function to run the CLI menu -------------------
+
 def main():
-    inventory = Inventory()
+    inventory = Inventory()  # ------------- Create an Inventory object
 
     while True:
+        # Display the menu
         print("\n         >>>>> Madhumal Motors Inventory System <<<<<    ")
         print("       -------------------------------------------------  \n")
         print("1. Add Bike")
@@ -116,6 +132,7 @@ def main():
         choice = input(" \n Enter your choice: ")
 
         if choice == '1':
+            # Add a new bike to the inventory
             make = input("Enter Bike make: ")
             model = input("Enter Bike model: ")
             quantity = int(input("Enter Quantity: "))
@@ -124,6 +141,7 @@ def main():
             print("Bike Added Successfully.")
 
         elif choice == '2':
+            # Search for the price of a bike
             make = input("Enter bike make: ")
             model = input("Enter bike model: ")
             price = inventory.search_price(make, model)
@@ -133,6 +151,7 @@ def main():
                 print("Bike not found.")
 
         elif choice == '3':
+            # Create an invoice for selling a bike
             make = input("Enter bike make: ")
             model = input("Enter bike model: ")
             quantity = int(input("Enter quantity: "))
@@ -140,25 +159,31 @@ def main():
             print(invoice)
 
         elif choice == '4':
+            # Display the current inventory
             report = inventory.display_inventory()
             print(report)
 
         elif choice == '5':
+            # Generate an Excel report of the inventory
             file_name = input("Enter Excel file name (default: inventory_report.xlsx): ") or "inventory_report.xlsx"
             inventory.generate_excel_report(file_name)
             print(f"Excel report generated: {file_name}")
 
         elif choice == '6':
+            # Generate a PDF report of the inventory
             file_name = input("Enter PDF file name (default: inventory_report.pdf): ") or "inventory_report.pdf"
             inventory.generate_pdf_report(file_name)
             print(f"PDF report generated: {file_name}")
 
         elif choice == '7':
+            # Exit the program
             print("Exiting...")
             break
 
         else:
             print("Invalid choice. Please try again.")
+
+# Run the main function if this script is executed
 
 if __name__ == "__main__":
     main()
